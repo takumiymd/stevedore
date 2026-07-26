@@ -1,0 +1,17 @@
+[package]
+name = "stevedore"
+version = "0.1.0"
+edition = "2021"
+description = "A keyboard-driven TUI for managing Docker containers and Compose stacks"
+
+[dependencies]
+anyhow = "1"
+bollard = "0.18"
+crossterm = { version = "0.28", features = ["event-stream"] }
+futures-util = "0.3"
+ratatui = "0.29"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util"] }
+
+[profile.release]
+lto = true
+strip = true
