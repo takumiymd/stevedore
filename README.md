@@ -21,7 +21,7 @@ A fast, terminal driven UI for managing Docker containers and Docker Compose sta
 - Details pane with image, state, status, ports, Compose project/service, and live CPU, memory, and network stats
 - Live log streaming with scrollback
 - Start, stop, and restart containers without leaving the keyboard
-- One-key Compose service update: pulls the latest image and recreates the service (`docker compose pull` + `up -d --no-deps`), streaming the command output into the UI
+- One-key Compose service update: pulls the latest image and recreates the service (`docker compose pull` + `up -d --build --no-deps`), streaming the command output into the UI
 
 ## Requirements
 

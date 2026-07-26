@@ -311,7 +311,7 @@ async fn run_compose_update(
 ) {
     let steps: [Vec<String>; 2] = [
         compose_args(&compose, &["pull", &compose.service]),
-        compose_args(&compose, &["up", "-d", "--no-deps", &compose.service]),
+        compose_args(&compose, &["up", "-d", "--build", "--no-deps", &compose.service]),
     ];
 
     for args in steps {
