@@ -16,7 +16,8 @@ A fast, terminal-driven UI for managing Docker containers and Docker Compose sta
 
 ## Looks
 
-![Stevedore UI Screenshot](assets/screenshot.png)
+![Stevedore UI Demo](assets/stevedore.gif)
+
 
 ## Features
 
