@@ -9,7 +9,10 @@
 
 # Stevedore
 
-A fast, terminal driven UI for managing Docker containers and Docker Compose stacks.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-2021-blue.svg)](https://www.rust-lang.org/)
+
+A fast, terminal-driven UI for managing Docker containers and Docker Compose stacks.
 
 ## Looks
 
@@ -74,3 +77,7 @@ The UI thread never blocks on the Docker API: every action runs on its own task 
 - Update all services of a Compose stack at once
 - Container filtering and search
 - Grouping the container list by Compose project
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
