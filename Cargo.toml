@@ -3,6 +3,7 @@ name = "stevedore"
 version = "0.1.0"
 edition = "2021"
 description = "A keyboard-driven TUI for managing Docker containers and Compose stacks"
+license = "MIT"
 
 [dependencies]
 anyhow = "1"
