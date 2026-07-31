@@ -11,6 +11,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-2021-blue.svg)](https://www.rust-lang.org/)
+[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
+
 
 A fast, terminal-driven UI for managing Docker containers and Docker Compose stacks.
 
