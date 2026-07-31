@@ -33,6 +33,16 @@ A fast, terminal-driven UI for managing Docker containers and Docker Compose sta
 - A running Docker daemon reachable via the default local socket
 - The `docker` CLI with the Compose plugin (needed only for the update feature)
 
+## Installation
+
+To install Stevedore globally on your system, clone the repository and run:
+
+```sh
+cargo install --path .
+```
+
+This will compile the binary in release mode and install it to your cargo binary directory (usually `~/.cargo/bin/`), making the `stevedore` command available globally in your terminal.
+
 ## Build and run
 
 ```sh
