@@ -37,9 +37,19 @@ A fast, terminal-driven UI for managing Docker containers and Docker Compose sta
 
 ## Installation
 
-To install Stevedore globally on your system, clone the repository and run:
+### Via Cargo
+You can install Stevedore directly from crates.io:
 
 ```sh
+cargo install stevedore-tui
+```
+
+### From Source
+Alternatively, clone the repository and build it locally:
+
+```sh
+git clone https://github.com/takumiymd/stevedore.git
+cd stevedore
 cargo install --path .
 ```
 

@@ -1,9 +1,17 @@
 [package]
-name = "stevedore"
+name = "stevedore-tui"
 version = "0.1.0"
 edition = "2021"
 description = "A keyboard-driven TUI for managing Docker containers and Compose stacks"
 license = "MIT"
+repository = "https://github.com/takumiymd/stevedore"
+readme = "README.md"
+keywords = ["docker", "tui", "docker-compose", "ratatui", "terminal"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "stevedore"
+path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
