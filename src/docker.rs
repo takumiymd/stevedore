@@ -78,13 +78,31 @@ pub fn spawn(msg_tx: UnboundedSender<Message>, mut cmd_rx: UnboundedReceiver<Doc
         while let Some(cmd) = cmd_rx.recv().await {
             match cmd {
                 DockerCommand::Start { id, name } => {
-                    run_action(docker.clone(), msg_tx.clone(), ContainerAction::Start, id, name);
+                    run_action(
+                        docker.clone(),
+                        msg_tx.clone(),
+                        ContainerAction::Start,
+                        id,
+                        name,
+                    );
                 }
                 DockerCommand::Stop { id, name } => {
-                    run_action(docker.clone(), msg_tx.clone(), ContainerAction::Stop, id, name);
+                    run_action(
+                        docker.clone(),
+                        msg_tx.clone(),
+                        ContainerAction::Stop,
+                        id,
+                        name,
+                    );
                 }
                 DockerCommand::Restart { id, name } => {
-                    run_action(docker.clone(), msg_tx.clone(), ContainerAction::Restart, id, name);
+                    run_action(
+                        docker.clone(),
+                        msg_tx.clone(),
+                        ContainerAction::Restart,
+                        id,
+                        name,
+                    );
                 }
                 DockerCommand::FetchStats { id } => {
                     let docker = docker.clone();
@@ -121,7 +139,10 @@ pub fn spawn(msg_tx: UnboundedSender<Message>, mut cmd_rx: UnboundedReceiver<Doc
 }
 
 async fn send_container_list(docker: &Docker, tx: &UnboundedSender<Message>) {
-    let options = ListContainersOptions::<String> { all: true, ..Default::default() };
+    let options = ListContainersOptions::<String> {
+        all: true,
+        ..Default::default()
+    };
     match docker.list_containers(Some(options)).await {
         Ok(summaries) => {
             let mut containers: Vec<ContainerInfo> =
@@ -130,7 +151,9 @@ async fn send_container_list(docker: &Docker, tx: &UnboundedSender<Message>) {
             let _ = tx.send(Message::ContainersUpdated(containers));
         }
         Err(err) => {
-            let _ = tx.send(Message::DockerError(format!("Failed to list containers: {err}")));
+            let _ = tx.send(Message::DockerError(format!(
+                "Failed to list containers: {err}"
+            )));
         }
     }
 }
@@ -143,7 +166,11 @@ fn summary_to_info(summary: ContainerSummary) -> ContainerInfo {
         .and_then(|names| names.first())
         .map(|n| n.trim_start_matches('/').to_string())
         .unwrap_or_else(|| "<unnamed>".to_string());
-    let ports = summary.ports.as_deref().map(format_ports).unwrap_or_default();
+    let ports = summary
+        .ports
+        .as_deref()
+        .map(format_ports)
+        .unwrap_or_default();
     let compose = summary.labels.as_ref().and_then(compose_info);
 
     ContainerInfo {
@@ -162,7 +189,9 @@ fn summary_to_info(summary: ContainerSummary) -> ContainerInfo {
 fn compose_info(labels: &HashMap<String, String>) -> Option<ComposeInfo> {
     let project = labels.get("com.docker.compose.project")?.clone();
     let service = labels.get("com.docker.compose.service")?.clone();
-    let working_dir = labels.get("com.docker.compose.project.working_dir").cloned();
+    let working_dir = labels
+        .get("com.docker.compose.project.working_dir")
+        .cloned();
     let config_files = labels
         .get("com.docker.compose.project.config_files")
         .map(|files| {
@@ -173,7 +202,12 @@ fn compose_info(labels: &HashMap<String, String>) -> Option<ComposeInfo> {
                 .collect()
         })
         .unwrap_or_default();
-    Some(ComposeInfo { project, service, working_dir, config_files })
+    Some(ComposeInfo {
+        project,
+        service,
+        working_dir,
+        config_files,
+    })
 }
 
 fn format_ports(ports: &[Port]) -> String {
@@ -205,11 +239,19 @@ fn run_action(
     tokio::spawn(async move {
         let result = match action {
             ContainerAction::Start => {
-                docker.start_container(&id, None::<StartContainerOptions<String>>).await
+                docker
+                    .start_container(&id, None::<StartContainerOptions<String>>)
+                    .await
             }
-            ContainerAction::Stop => docker.stop_container(&id, None::<StopContainerOptions>).await,
+            ContainerAction::Stop => {
+                docker
+                    .stop_container(&id, None::<StopContainerOptions>)
+                    .await
+            }
             ContainerAction::Restart => {
-                docker.restart_container(&id, None::<RestartContainerOptions>).await
+                docker
+                    .restart_container(&id, None::<RestartContainerOptions>)
+                    .await
             }
         };
         let (done, verb) = match action {
@@ -222,7 +264,9 @@ fn run_action(
                 let _ = tx.send(Message::Status(format!("{done} {name}")));
             }
             Err(err) => {
-                let _ = tx.send(Message::DockerError(format!("Failed to {verb} {name}: {err}")));
+                let _ = tx.send(Message::DockerError(format!(
+                    "Failed to {verb} {name}: {err}"
+                )));
             }
         }
         // Reflect the new state immediately instead of waiting for the poller.
@@ -233,7 +277,10 @@ fn run_action(
 async fn fetch_stats(docker: Docker, tx: UnboundedSender<Message>, id: String) {
     // stream: false makes the daemon sample twice and return one result
     // with precpu populated, which is what the CPU math needs.
-    let options = StatsOptions { stream: false, one_shot: false };
+    let options = StatsOptions {
+        stream: false,
+        one_shot: false,
+    };
     let mut stream = docker.stats(&id, Some(options));
     if let Some(Ok(stats)) = stream.next().await {
         let _ = tx.send(Message::StatsUpdated(id, compute_stats(&stats)));
@@ -241,8 +288,8 @@ async fn fetch_stats(docker: Docker, tx: UnboundedSender<Message>, id: String) {
 }
 
 fn compute_stats(stats: &Stats) -> StatsInfo {
-    let cpu_delta =
-        stats.cpu_stats.cpu_usage.total_usage as f64 - stats.precpu_stats.cpu_usage.total_usage as f64;
+    let cpu_delta = stats.cpu_stats.cpu_usage.total_usage as f64
+        - stats.precpu_stats.cpu_usage.total_usage as f64;
     let system_delta = stats.cpu_stats.system_cpu_usage.unwrap_or(0) as f64
         - stats.precpu_stats.system_cpu_usage.unwrap_or(0) as f64;
     let online_cpus = stats.cpu_stats.online_cpus.unwrap_or(1).max(1) as f64;
@@ -256,8 +303,9 @@ fn compute_stats(stats: &Stats) -> StatsInfo {
         .networks
         .as_ref()
         .map(|nets| {
-            nets.values()
-                .fold((0u64, 0u64), |(rx, tx), n| (rx + n.rx_bytes, tx + n.tx_bytes))
+            nets.values().fold((0u64, 0u64), |(rx, tx), n| {
+                (rx + n.rx_bytes, tx + n.tx_bytes)
+            })
         })
         .unwrap_or((0, 0));
 
@@ -288,7 +336,10 @@ async fn stream_logs(docker: Docker, tx: UnboundedSender<Message>, id: String) {
                     if line.is_empty() {
                         continue;
                     }
-                    if tx.send(Message::LogLine(id.clone(), line.to_string())).is_err() {
+                    if tx
+                        .send(Message::LogLine(id.clone(), line.to_string()))
+                        .is_err()
+                    {
                         return;
                     }
                 }
@@ -311,7 +362,10 @@ async fn run_compose_update(
 ) {
     let steps: [Vec<String>; 2] = [
         compose_args(&compose, &["pull", &compose.service]),
-        compose_args(&compose, &["up", "-d", "--build", "--no-deps", &compose.service]),
+        compose_args(
+            &compose,
+            &["up", "-d", "--build", "--no-deps", &compose.service],
+        ),
     ];
 
     for args in steps {
@@ -319,7 +373,9 @@ async fn run_compose_update(
         match run_streamed(&tx, &compose, &args).await {
             Ok(status) if status.success() => {}
             Ok(status) => {
-                let code = status.code().map_or("signal".to_string(), |c| c.to_string());
+                let code = status
+                    .code()
+                    .map_or("signal".to_string(), |c| c.to_string());
                 let _ = tx.send(Message::UpdateFinished {
                     success: false,
                     detail: format!("Update of {name} failed (exit {code})"),
@@ -349,7 +405,11 @@ async fn run_compose_update(
 /// project and config files, so the update targets exactly the stack that
 /// created it.
 fn compose_args(compose: &ComposeInfo, tail: &[&str]) -> Vec<String> {
-    let mut args = vec!["compose".to_string(), "-p".to_string(), compose.project.clone()];
+    let mut args = vec![
+        "compose".to_string(),
+        "-p".to_string(),
+        compose.project.clone(),
+    ];
     for file in &compose.config_files {
         args.push("-f".to_string());
         args.push(file.clone());
@@ -408,7 +468,10 @@ mod tests {
     use super::*;
 
     fn labels(pairs: &[(&str, &str)]) -> HashMap<String, String> {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
     }
 
     #[test]
@@ -428,7 +491,10 @@ mod tests {
         assert_eq!(info.working_dir.as_deref(), Some("/srv/camino"));
         assert_eq!(
             info.config_files,
-            vec!["/srv/camino/compose.yaml", "/srv/camino/compose.override.yaml"]
+            vec![
+                "/srv/camino/compose.yaml",
+                "/srv/camino/compose.override.yaml"
+            ]
         );
     }
 
@@ -449,7 +515,15 @@ mod tests {
         };
         assert_eq!(
             compose_args(&compose, &["pull", "web"]),
-            vec!["compose", "-p", "camino", "-f", "/srv/camino/compose.yaml", "pull", "web"]
+            vec![
+                "compose",
+                "-p",
+                "camino",
+                "-f",
+                "/srv/camino/compose.yaml",
+                "pull",
+                "web"
+            ]
         );
     }
 }

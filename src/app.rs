@@ -57,7 +57,11 @@ impl ContainerInfo {
                 if !public_port.is_empty() && public_port.chars().all(|c| c.is_ascii_digit()) {
                     let proto = if part.contains("/tcp") { "tcp" } else { "udp" };
                     if proto == "tcp" {
-                        let scheme = if public_port == "443" { "https" } else { "http" };
+                        let scheme = if public_port == "443" {
+                            "https"
+                        } else {
+                            "http"
+                        };
                         urls.push(format!("{}://localhost:{}", scheme, public_port));
                     }
                 }
@@ -68,7 +72,6 @@ impl ContainerInfo {
         urls
     }
 }
-
 
 /// Live resource usage for the selected container.
 #[derive(Debug, Clone, Copy, Default)]
@@ -97,11 +100,17 @@ pub struct StatusMessage {
 
 impl StatusMessage {
     pub fn info(text: impl Into<String>) -> Self {
-        Self { text: text.into(), is_error: false }
+        Self {
+            text: text.into(),
+            is_error: false,
+        }
     }
 
     pub fn error(text: impl Into<String>) -> Self {
-        Self { text: text.into(), is_error: true }
+        Self {
+            text: text.into(),
+            is_error: true,
+        }
     }
 }
 
@@ -156,7 +165,9 @@ impl App {
     }
 
     pub fn selected(&self) -> Option<&ContainerInfo> {
-        self.list_state.selected().and_then(|i| self.containers.get(i))
+        self.list_state
+            .selected()
+            .and_then(|i| self.containers.get(i))
     }
 
     /// The Update function: fold one message into the model.
@@ -249,7 +260,11 @@ impl App {
     /// Drop stale status messages; called on the steady polling cadence.
     fn expire_status(&mut self) {
         if let (Some(status), Some(at)) = (&self.status, self.status_at) {
-            let ttl = if status.is_error { ERROR_STATUS_TTL } else { STATUS_TTL };
+            let ttl = if status.is_error {
+                ERROR_STATUS_TTL
+            } else {
+                STATUS_TTL
+            };
             if at.elapsed() > ttl {
                 self.status = None;
                 self.status_at = None;
@@ -371,7 +386,9 @@ impl App {
                 self.update_running = true;
                 self.view = View::Update;
                 self.scroll_back = 0;
-                self.set_status(StatusMessage::info(format!("Compose Update triggered for {name}")));
+                self.set_status(StatusMessage::info(format!(
+                    "Compose Update triggered for {name}"
+                )));
                 self.send(DockerCommand::ComposeUpdate { compose, name });
             }
             None => {
@@ -412,7 +429,11 @@ mod tests {
             id: id.to_string(),
             name: name.to_string(),
             image: "nginx:latest".to_string(),
-            state: if running { "running".to_string() } else { "stopped".to_string() },
+            state: if running {
+                "running".to_string()
+            } else {
+                "stopped".to_string()
+            },
             status: "Up 2 hours".to_string(),
             ports: "80/tcp".to_string(),
             compose: None,
@@ -439,7 +460,7 @@ mod tests {
     #[test]
     fn test_app_quit_keys() {
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         let mut app = App::new(tx.clone());
         let q_key = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::empty());
         app.update(Message::Key(q_key));
@@ -466,7 +487,7 @@ mod tests {
             make_container("3", "web3", true),
         ];
         app.update(Message::ContainersUpdated(containers));
-        
+
         assert_eq!(app.list_state.selected(), Some(0));
         assert_eq!(app.selected().unwrap().id, "1");
 
@@ -516,7 +537,7 @@ mod tests {
             make_container("2", "web2", false),
         ];
         app.update(Message::ContainersUpdated(containers));
-        
+
         app.list_state.select(Some(1));
 
         let updated_containers = vec![
@@ -528,9 +549,7 @@ mod tests {
         assert_eq!(app.list_state.selected(), Some(1));
         assert_eq!(app.selected().unwrap().id, "2");
 
-        let updated_containers_2 = vec![
-            make_container("3", "web3", true),
-        ];
+        let updated_containers_2 = vec![make_container("3", "web3", true)];
         app.update(Message::ContainersUpdated(updated_containers_2));
         assert_eq!(app.list_state.selected(), Some(0));
     }
@@ -681,7 +700,11 @@ mod tests {
         assert_eq!(app.view, View::Update);
         assert!(app.update_running);
         assert_eq!(app.update_target, Some("proj/svc".to_string()));
-        if let Ok(DockerCommand::ComposeUpdate { compose: c_info, name }) = rx.try_recv() {
+        if let Ok(DockerCommand::ComposeUpdate {
+            compose: c_info,
+            name,
+        }) = rx.try_recv()
+        {
             assert_eq!(c_info.project, "proj");
             assert_eq!(name, "web1");
         } else {
@@ -691,7 +714,10 @@ mod tests {
         app.update(Message::UpdateLine("pulling...".to_string()));
         assert_eq!(app.update_output, vec!["pulling...".to_string()]);
 
-        app.update(Message::UpdateFinished { success: true, detail: "Updated successfully".to_string() });
+        app.update(Message::UpdateFinished {
+            success: true,
+            detail: "Updated successfully".to_string(),
+        });
         assert!(!app.update_running);
         assert_eq!(app.status.as_ref().unwrap().text, "Updated successfully");
 
@@ -710,9 +736,9 @@ mod tests {
     fn test_app_scrolling() {
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
         let mut app = App::new(tx);
-        
+
         app.view = View::Logs;
-        
+
         let pgup = KeyEvent::new(KeyCode::PageUp, KeyModifiers::empty());
         let pgdn = KeyEvent::new(KeyCode::PageDown, KeyModifiers::empty());
         let home = KeyEvent::new(KeyCode::Home, KeyModifiers::empty());
@@ -760,8 +786,10 @@ mod tests {
         c.ports = "9000->9000/tcp, 53->53/udp, 80->80/tcp".to_string();
         assert_eq!(
             c.local_urls(),
-            vec!["http://localhost:80".to_string(), "http://localhost:9000".to_string()]
+            vec![
+                "http://localhost:80".to_string(),
+                "http://localhost:9000".to_string()
+            ]
         );
     }
 }
-
