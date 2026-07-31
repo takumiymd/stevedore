@@ -53,7 +53,8 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(title, title_area);
 
             let status_style = if status.is_error {
-                base.fg(Color::Rgb(255, 200, 120)).add_modifier(Modifier::BOLD)
+                base.fg(Color::Rgb(255, 200, 120))
+                    .add_modifier(Modifier::BOLD)
             } else {
                 base
             };
@@ -110,7 +111,11 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
         return;
     };
 
-    let state_color = if container.is_running() { RUNNING_GREEN } else { EXITED_RED };
+    let state_color = if container.is_running() {
+        RUNNING_GREEN
+    } else {
+        EXITED_RED
+    };
     let short_id: String = container.id.chars().take(12).collect();
 
     let mut lines = vec![
@@ -121,7 +126,9 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
             "State",
             Span::styled(
                 container.state.as_str(),
-                Style::default().fg(state_color).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(state_color)
+                    .add_modifier(Modifier::BOLD),
             ),
         ),
         kv_line("Status", Span::raw(container.status.as_str())),
@@ -141,7 +148,12 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
             let label = if i == 0 { "Local URL" } else { "" };
             lines.push(kv_line(
                 label,
-                Span::styled(url, Style::default().fg(DOCKER_BLUE).add_modifier(Modifier::UNDERLINED)),
+                Span::styled(
+                    url,
+                    Style::default()
+                        .fg(DOCKER_BLUE)
+                        .add_modifier(Modifier::UNDERLINED),
+                ),
             ));
         }
     }
@@ -156,13 +168,18 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
     lines.push(Line::default());
     lines.push(Line::from(Span::styled(
         " Live Stats",
-        Style::default().fg(DOCKER_BLUE).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(DOCKER_BLUE)
+            .add_modifier(Modifier::BOLD),
     )));
 
     if !container.is_running() {
         lines.push(kv_line(
             "",
-            Span::styled("container is not running", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                "container is not running",
+                Style::default().fg(Color::DarkGray),
+            ),
         ));
     } else {
         match &app.stats {
@@ -172,7 +189,10 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
                 } else {
                     0.0
                 };
-                lines.push(kv_line("CPU", Span::raw(format!("{:.2}%", stats.cpu_percent))));
+                lines.push(kv_line(
+                    "CPU",
+                    Span::raw(format!("{:.2}%", stats.cpu_percent)),
+                ));
                 lines.push(kv_line(
                     "Memory",
                     Span::raw(format!(
@@ -202,7 +222,10 @@ fn draw_details(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn draw_logs(frame: &mut Frame, app: &mut App, area: Rect) {
-    let name = app.selected().map(|c| c.name.clone()).unwrap_or_else(|| "?".to_string());
+    let name = app
+        .selected()
+        .map(|c| c.name.clone())
+        .unwrap_or_else(|| "?".to_string());
 
     if app.logs.is_empty() {
         let waiting = Paragraph::new("Waiting for log output...")
@@ -214,17 +237,27 @@ fn draw_logs(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let (start, end) = scroll_window(&mut app.scroll_back, app.logs.len(), area);
     let title = if app.scroll_back > 0 {
-        format!(" Logs: {name} [scrolled back {} lines, End to follow] ", app.scroll_back)
+        format!(
+            " Logs: {name} [scrolled back {} lines, End to follow] ",
+            app.scroll_back
+        )
     } else {
         format!(" Logs: {name} ")
     };
-    let lines: Vec<Line> = app.logs[start..end].iter().map(|l| Line::raw(l.as_str())).collect();
+    let lines: Vec<Line> = app.logs[start..end]
+        .iter()
+        .map(|l| Line::raw(l.as_str()))
+        .collect();
     frame.render_widget(Paragraph::new(lines).block(pane_block(title)), area);
 }
 
 fn draw_update(frame: &mut Frame, app: &mut App, area: Rect) {
     let target = app.update_target.clone().unwrap_or_else(|| "?".to_string());
-    let state = if app.update_running { "running" } else { "done" };
+    let state = if app.update_running {
+        "running"
+    } else {
+        "done"
+    };
 
     if app.update_output.is_empty() {
         let waiting = Paragraph::new("Starting compose update...")
@@ -236,7 +269,10 @@ fn draw_update(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let (start, end) = scroll_window(&mut app.scroll_back, app.update_output.len(), area);
     let title = if app.scroll_back > 0 {
-        format!(" Update: {target} [{state}] [scrolled back {} lines] ", app.scroll_back)
+        format!(
+            " Update: {target} [{state}] [scrolled back {} lines] ",
+            app.scroll_back
+        )
     } else {
         format!(" Update: {target} [{state}] ")
     };
@@ -244,7 +280,12 @@ fn draw_update(frame: &mut Frame, app: &mut App, area: Rect) {
         .iter()
         .map(|l| {
             if l.starts_with("$ ") {
-                Line::styled(l.as_str(), Style::default().fg(DOCKER_BLUE).add_modifier(Modifier::BOLD))
+                Line::styled(
+                    l.as_str(),
+                    Style::default()
+                        .fg(DOCKER_BLUE)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
                 Line::raw(l.as_str())
             }
@@ -292,7 +333,9 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
         ],
     };
 
-    let key_style = Style::default().fg(DOCKER_BLUE).add_modifier(Modifier::BOLD);
+    let key_style = Style::default()
+        .fg(DOCKER_BLUE)
+        .add_modifier(Modifier::BOLD);
     let label_style = Style::default().fg(Color::Gray);
     let separator_style = Style::default().fg(Color::DarkGray);
 
