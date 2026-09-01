@@ -352,6 +352,19 @@ async fn stream_logs(docker: Docker, tx: UnboundedSender<Message>, id: String) {
     }
 }
 
+fn update_steps(compose: &ComposeInfo) -> [(Vec<String>, bool); 2] {
+    [
+        (compose_args(compose, &["pull", &compose.service]), false),
+        (
+            compose_args(
+                compose,
+                &["up", "-d", "--build", "--no-deps", &compose.service],
+            ),
+            true,
+        ),
+    ]
+}
+
 /// Update a Compose service: pull its latest image, then recreate it.
 /// Output from both steps streams into the UI as `UpdateLine` messages.
 async fn run_compose_update(
@@ -360,15 +373,7 @@ async fn run_compose_update(
     compose: ComposeInfo,
     name: String,
 ) {
-    let steps: [Vec<String>; 2] = [
-        compose_args(&compose, &["pull", &compose.service]),
-        compose_args(
-            &compose,
-            &["up", "-d", "--build", "--no-deps", &compose.service],
-        ),
-    ];
-
-    for args in steps {
+    for (args, required) in update_steps(&compose) {
         let _ = tx.send(Message::UpdateLine(format!("$ docker {}", args.join(" "))));
         match run_streamed(&tx, &compose, &args).await {
             Ok(status) if status.success() => {}
@@ -376,6 +381,12 @@ async fn run_compose_update(
                 let code = status
                     .code()
                     .map_or("signal".to_string(), |c| c.to_string());
+                if !required {
+                    let _ = tx.send(Message::UpdateLine(format!(
+                        "note: step exited {code}, continuing"
+                    )));
+                    continue;
+                }
                 let _ = tx.send(Message::UpdateFinished {
                     success: false,
                     detail: format!("Update of {name} failed (exit {code})"),
@@ -503,6 +514,22 @@ mod tests {
         assert!(compose_info(&labels(&[("com.docker.compose.project", "x")])).is_none());
         assert!(compose_info(&labels(&[("com.docker.compose.service", "x")])).is_none());
         assert!(compose_info(&labels(&[("some.other.label", "x")])).is_none());
+    }
+
+    #[test]
+    fn pull_is_best_effort_and_up_is_required() {
+        let compose = ComposeInfo {
+            project: "camino".to_string(),
+            service: "web".to_string(),
+            working_dir: None,
+            config_files: vec!["/srv/camino/compose.yaml".to_string()],
+        };
+        let [(pull, pull_required), (up, up_required)] = update_steps(&compose);
+
+        assert!(pull.contains(&"pull".to_string()));
+        assert!(!pull_required);
+        assert!(up.contains(&"--build".to_string()));
+        assert!(up_required);
     }
 
     #[test]
