@@ -13,6 +13,8 @@
 [![Rust](https://img.shields.io/badge/rust-2021-blue.svg)](https://www.rust-lang.org/)
 [![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
 
+English | [日本語](README.ja.md)
+
 
 A fast, terminal-driven UI for managing Docker containers and Docker Compose stacks.
 
